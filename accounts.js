@@ -1,5 +1,6 @@
 const { makeHmacBody, makeHmacResult, generateSignature } = require("./x-hmac-gen.js")
 const fetch = require("node-fetch")
+const HttpsProxyAgent = require("https-proxy-agent")
 const generate = require("boring-name-generator")
 
 class Accounts {
@@ -9,11 +10,16 @@ class Accounts {
          * @param {String} accountData.username
          * @param {String} accountData.password
          * @param {String} accountData.email
+         * @param {Object} accountData.proxy
          * If you choose to omit the username and/or password, they will be generated for you.
         */
         let username = accountData.username || this.randomUsername()
         let password = accountData.password || this.randomPassword()
         let email = accountData.email
+        let proxy = accountData.proxy || ""
+
+        if (proxy) 
+            proxy = new HttpsProxyAgent(`http://${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`)
 
         let body = JSON.stringify({
             username: username,
@@ -28,6 +34,7 @@ class Accounts {
         }
         
         let resp = await fetch("https://accounts.reddit.com/api/register", {
+            agent: proxy,
             method: "POST",
             headers: {
                 "User-Agent": "Reddit/Version 2023.29.0/Build 1059855/Android 13",

@@ -1,10 +1,14 @@
 const Accounts = require("./accounts.js")
+const proxies = require("./proxies.json")
 const email = "aaaaaatest@gmail.com"
+const ratelimit = 10 * 60 * 1000
+var index = 0
 
 async function main() {
     try {
         let account = await Accounts.makeAccount({
-            email: email
+            email: email,
+            proxy: proxies[index++ % proxies.length]
         })
         let [json, username, password] = account
         switch (json.success) {
@@ -25,4 +29,4 @@ async function main() {
     }
 }
 
-main()
+setInterval(main, (ratelimit / proxies.length) + 1000)

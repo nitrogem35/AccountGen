@@ -1,14 +1,13 @@
 const Accounts = require("./accounts.js")
-const proxies = require("./proxies.json")
-const email = "aaaaaatest@gmail.com"
-const ratelimit = 10 * 60 * 1000
+const email = "aaaaaaatest@gmail.com"
+const ratelimit = 500 //Speed in milliseconds
 var index = 0
 
 async function main() {
     try {
         let account = await Accounts.makeAccount({
             email: email,
-            proxy: proxies[index++ % proxies.length]
+            useTor: true
         })
         let [json, username, password] = account
         switch (json.success) {
@@ -29,4 +28,10 @@ async function main() {
     }
 }
 
-setInterval(main, (ratelimit / proxies.length) + 1000)
+function start() {
+    console.log("Starting account generator...")
+    main()
+    setInterval(main, ratelimit)
+}
+
+start()

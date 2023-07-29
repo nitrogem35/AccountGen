@@ -8,8 +8,12 @@ The account generator requires `Node.js` to run. Older versions may work, but be
 
 After cloning the repository to the root of your project folder, run `npm install` to install the required dependencies.
 
-Once you've installed the necessary dependencies, simply run `node main.js` in your terminal to generate an account.
+Once you've installed the necessary dependencies, simply run `node main.js` in your terminal to begin generating accounts.
 ```shell
 > node main.js
 Account created successfully! Username: Cowardly-Whale-1080 Password: $9hQmBgx#4CQJ1cxGoE
 ```
+
+# Config
+In order to avoid termination, it is recommended that these accounts are verified by email. You can do this by setting up mail on a service like [Cloudflare](https://dash.cloudflare.com/), and using a worker to send the verification emails to your own server for parsing.
+The domain used for verifying these accounts can be specified in the `.env` file as `DOMAIN_NAME`.

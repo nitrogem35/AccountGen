@@ -1,10 +1,11 @@
+require("dotenv").config()
 const Accounts = require("./accounts.js")
-const email = "aaaaaaatest@gmail.com"
-const ratelimit = 500 //Speed in milliseconds
-var index = 0
+const domain =  process.env.DOMAIN_NAME || "gmail.com"
+const ratelimit = +process.env.RATELIMIT || 1000 //Speed in milliseconds
 
 async function main() {
     try {
+        let email = `${Math.random().toString(36).slice(2)}@${domain}`
         let account = await Accounts.makeAccount({
             email: email,
             useTor: true
@@ -23,15 +24,19 @@ async function main() {
         }
     }
     catch (err) {
-        console.log("Could not create account.")
+        console.log("Could not create account. Check if Tor is running.")
         return null
     }
 }
 
-function start() {
-    console.log("Starting account generator...")
-    main()
-    setInterval(main, ratelimit)
+async function genLoop() {
+    let startTime = Date.now()
+    await main()
+    let timeElapsed = Date.now() - startTime
+    if (timeElapsed < ratelimit)
+        setTimeout(genLoop, ratelimit - timeElapsed)
+    else
+        genLoop()
 }
 
-start()
+genLoop()

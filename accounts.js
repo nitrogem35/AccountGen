@@ -1,6 +1,6 @@
 const { makeHmacBody, makeHmacResult, generateSignature } = require("./x-hmac-gen.js")
 const fetch = require("node-fetch")
-const SocksProxyAgent = require('socks-proxy-agent')
+const HttpsProxyAgent = require('https-proxy-agent')
 const generate = require("boring-name-generator")
 
 class Accounts {
@@ -10,13 +10,11 @@ class Accounts {
          * @param {String} accountData.username
          * @param {String} accountData.password
          * @param {String} accountData.email
-         * @param {Boolean} accountDate.useTor
          * If you choose to omit the username and/or password, they will be generated for you.
         */
         let username = accountData.username || this.randomUsername()
         let password = accountData.password || this.randomPassword()
         let email = accountData.email
-        let proxy = accountData.useTor
 
         let body = JSON.stringify({
             username: username,
@@ -29,12 +27,26 @@ class Accounts {
             HmacBody: generateSignature(makeHmacBody(body)),
             HmacResult: generateSignature(makeHmacResult())
         }
+
+        let proxyAgent = new HttpsProxyAgent("http://127.0.0.1:51080")
+        /*let ip;
+        lastTenMinutes.forEach((ipObj, index) => {
+            if (ipObj.time < Date.now() - 600000)
+                lastTenMinutes.splice(index, 1)
+        })
         
+        do {
+            proxyAgent = proxy ? new SocksProxyAgent({ host: '127.0.0.1', port: 9050, username: Math.random().toString(16), password: Math.random().toString(16) }) : null
+            ip = await fetch("https://api.ipify.org?format=json", {agent: proxyAgent}).then(res => res.json()).then(json => json.ip)
+        } while (lastTenMinutes.find(ipObj => ipObj.ip == ip)) 
+        
+        lastTenMinutes.push({ip: ip, time: Date.now()})*/
+
         let resp = await fetch("https://accounts.reddit.com/api/register", {
-            agent: proxy ? new SocksProxyAgent({ host: '127.0.0.1', port: 9050, username: Math.random().toString(16), password: Math.random().toString(16) }) : null,
+            agent: proxyAgent,
             method: "POST",
             headers: {
-                "User-Agent": "Reddit/Version 2023.29.0/Build 1059855/Android 13",
+                "User-Agent": `Reddit/Version 2023.29.0/Build 1059855/Android 13`,
                 "Client-Vendor-ID": "7835b1cf-38ea-4a0e-a8c6-72a72a337ab1",
                 "X-Reddit-Retry": "algo=no-retries",
                 "X-Reddit-Compression": 1,
@@ -68,6 +80,19 @@ class Accounts {
         while (username.length > 20)
         let uppercased = username.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join("-")
         return uppercased
+    }
+
+    static async verify(data, proxy) {
+        var resp = await fetch(`https://www.reddit.com/api/v1/verify_email/${data[0]}.json?correlation_id=${data[1]}`, {
+            agent: proxy ? new HttpsProxyAgent("http://127.0.0.1:51080") : null,
+            method: "POST",
+            headers: {
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+            },
+            body: "id=#verify-email&renderstyle=html"
+        })
+        var data = await resp.json()
+        return data.success
     }
 }
 

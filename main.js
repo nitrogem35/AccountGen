@@ -9,13 +9,13 @@ const verificationURL = process.env.VERIFICATION_SERVER_URL || ""
 const debugMode = process.env.DEBUG_MODE || false
 var connection;
 var accsCreating = []
+var recentlyVerified = []
 
 async function main() {
     try {
         let email = `${Math.random().toString(36).slice(2)}@${domain}`
         let account = await Accounts.makeAccount({
-            email: email,
-            useTor: true
+            email: email
         })
         let [json, username, password] = account
         switch (json.success) {
@@ -36,8 +36,7 @@ async function main() {
     }
 }
 
-async function genLoop() {
-    let startTime = Date.now()
+async function mainDBWrapper() {
     let creds = await main()
     if (creds && !debugMode) {
         accsCreating.push(creds.username)
@@ -48,6 +47,11 @@ async function genLoop() {
             coloredLog(`Added ${creds.username} to database.`, "green")
         })
     }
+}
+
+async function genLoop() {
+    let startTime = Date.now()
+    await mainDBWrapper()
     let timeElapsed = Date.now() - startTime
     if (timeElapsed < ratelimit)
         setTimeout(genLoop, ratelimit - timeElapsed)
@@ -79,9 +83,9 @@ genLoop();
                         clearInterval(tryVerifyLoop)
                         verifyQuery(e.data)
                     }
-                    if (iter >= 30) clearInterval(tryVerifyLoop)
+                    if (iter >= 60) clearInterval(tryVerifyLoop)
                     iter++
-                }, 1000)
+                }, 500)
             }
             else verifyQuery(e.data)
         }
@@ -92,12 +96,24 @@ genLoop();
     socket.onerror = () => {}
 })()
 
-function verifyQuery(username) {
-    let query = `UPDATE accounts SET isVerified = 1 WHERE username = '${username}'`
-    connection.query(query, (err, result) => {
-        if (err) return
-        coloredLog(`Verified ${username}.`, "purple")
-    })
+async function verifyQuery(data) {
+    data = JSON.parse(data)
+    try {
+        let isVerified = await Accounts.verify(data.verificationData, true)
+        if (!isVerified) return
+        let query = `UPDATE accounts SET isVerified = 1 WHERE username = '${data.username}'`
+        connection.query(query, (err, result) => {
+            if (err) return
+            recentlyVerified.push(Date.now())
+            if (recentlyVerified.length > 100) recentlyVerified.shift()
+            let rate = (recentlyVerified.length / ((recentlyVerified.at(-1) - recentlyVerified[0]) / 60000)).toFixed(2)
+            coloredLog(`Verified ${data.username}. (${rate} VPM)`, "purple")
+        })
+    }
+    catch (err) {
+        coloredLog(`Could not verify ${data.username}.`, "red")
+        return
+    }
 }
 
 function coloredLog(msg, color) {

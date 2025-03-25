@@ -1,5 +1,5 @@
 # AccountGen
-Account generator built in preparation for r/place 2024. It uses a novel g-reCaptcha v2 bypass technique, which involves sending mobile headers generated with a signing key embedded within the Reddit app itself.
+Account generator built in preparation for r/place 2024. It uses a Reddit-specific g-reCaptcha v2 bypass technique, which involves sending mobile headers generated with a signing key embedded within the Reddit app itself. This works because Reddit usually presents a captcha when trying to make a new account, but that captcha simply doesn't exist on mobile. This was probably done to improve the user experience - but we can use it to our advantage!
 
 The signing key currently in use by Reddit is `8c7abaa5f905f70400c81bf3a1a101e75f7210104b1991f0cd5240aa80c4d99d`.
 
